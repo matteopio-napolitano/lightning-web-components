@@ -32,7 +32,6 @@ jobs:
             #- mkdir keys
             #- echo $HUB_SERVER_KEY_HEX | xxd -r -ps >> keys/hub.key
             openssl enc -nosalt -aes-256-cbc -d -in assets/server.key.enc -out assets/server.key -base64 -K $DECRYPTION_KEY -iv $DECRYPTION_IV
-            cat assets/server.key
             #- openssl rsa -in keys/hub.key -check -noout
             
             ### Uncomment the following if performing deployments
@@ -45,10 +44,7 @@ jobs:
           name: Setup Org
           command: |
             echo 'Running tests'
-            echo "$HUB_CONSUMER_KEY"
-            echo "$HUB_SFDC_USER"
-            cat assets/server.key
-            sfdx force:auth:jwt:grant --clientid $HUB_CONSUMER_KEY --jwtkeyfile assets/server.key --username $HUB_SFDC_USER --setdefaultdevhubusername --setalias hub
+            sfdx force:auth:jwt:grant --clientid $HUB_CONSUMER_KEY --jwtkeyfile assets/server.key --username $HUB_SFDX_USER --setdefaultdevhubusername --setalias hub
             sfdx force --help
             sfdx force:org:create -s -f ~/repo/config/project-scratch-def.json -a circle_build_$CIRCLE_BUILD_NUM --wait 2
             sfdx force:source:push -u circle_build_$CIRCLE_BUILD_NUM
