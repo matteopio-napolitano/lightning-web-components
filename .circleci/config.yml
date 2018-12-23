@@ -13,10 +13,6 @@ jobs:
       - checkout
 
       - run:
-          name: Container Setup
-          command: apt-get update & apt-get install wget
-
-      - run:
           name: Download CLI
           command: |
             mkdir sfdx
