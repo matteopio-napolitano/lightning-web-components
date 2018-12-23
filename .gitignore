@@ -6,4 +6,7 @@
 sfdx-project.json
 config/
 
+## OS Specific
+.DS_Store
+
 ## APP
