@@ -1,9 +1,14 @@
 import { LightningElement, track } from 'lwc';
 
 export default class HelloWorld extends LightningElement {
-    @track greeting = 'World';
+    @track firstName = 'User';
+    @track lastName = 'Connected';
     
-    changeHandler(event) {
-        this.greeting = event.target.value;
+    changeFirstnameHandler(event) {
+        this.firstName = event.target.value;
+    }
+
+    changeLastnameHandler(event) {
+        this.lastName = event.target.value;
     }
 }
