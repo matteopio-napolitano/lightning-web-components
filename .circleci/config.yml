@@ -39,11 +39,10 @@ jobs:
             #- sfdx force:auth:jwt:grant --clientid $DEPLOY_CONSUMER_KEY --jwtkeyfile keys/deploy.key --username $DEPLOY_SFDC_USER -a deploy
 
       - run:
-          name: Setup Org
+          name: Create ScratchOrg and Push code
           command: |
             echo 'Running tests'
-            sfdx force:auth:jwt:grant --clientid $HUB_CONSUMER_KEY --jwtkeyfile assets/server.key --username $HUB_SFDX_USER --setdefaultdevhubusername --setalias hub
-            sfdx force --help
+            sfdx force:auth:jwt:grant --clientid $HUB_CONSUMER_KEY --jwtkeyfile assets/server.key --username $HUB_SFDX_USER --setdefaultdevhubusername -a hub
             sfdx force:org:create -s -f config/project-scratch-def.json -a circle_build_$CIRCLE_BUILD_NUM --wait 3
             sfdx force:source:push -u circle_build_$CIRCLE_BUILD_NUM
 
@@ -55,14 +54,6 @@ jobs:
 
       #- store_test_results:
           #path: ~/junit
-      
-      - run:
-          name: Greeting
-          command: echo Hello, world.
-
-      - run:
-          name: Print the Current Time
-          command: date
 
       - run:
           name: Delete Useless Scratch Org
