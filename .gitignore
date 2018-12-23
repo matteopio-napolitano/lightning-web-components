@@ -4,7 +4,6 @@
 ## SFDX
 .sfdx
 sfdx-project.json
-config/
 
 ## OS Specific
 .DS_Store
