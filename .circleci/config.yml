@@ -33,7 +33,6 @@ jobs:
             sfdx force:org:create -v $DEVHUB_ALIAS -s -f config/project-scratch-def.json -a $CI_ORG_ALIAS --wait 3
             sfdx force:org:display -u $CI_ORG_ALIAS
             sfdx force:source:push -u $CI_ORG_ALIAS
-            sfdx force:org:delete -u $CI_ORG_ALIAS -p
       
       - run:
           name: Run Apex Tests
