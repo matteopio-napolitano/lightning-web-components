@@ -3,6 +3,8 @@ jobs:
   build:
     environment:
       DX_CLI_URL: https://developer.salesforce.com/media/salesforce-cli/sfdx-linux-amd64.tar.xz
+      DEVHUB_ALIAS: huborg
+      CI_ORG_ALIAS: ciorg
     
     docker:
       - image: circleci/node
@@ -11,53 +13,35 @@ jobs:
       - checkout
 
       - run:
-          name: Download CLI
+          name: Prepare SFDX CLI
           command: |
+            # Install CLI
             mkdir sfdx
             wget -qO- $DX_CLI_URL | tar xJ -C sfdx --strip-components 1
-
-      - run:
-          name: Install CLI
-          command: |
             ./sfdx/install
             sfdx
-            mkdir tmp
 
-      - run:
-          name: Create hub key
-          command: |
-            echo 'make hub key'
-            #- mkdir keys
-            #- echo $HUB_SERVER_KEY_HEX | xxd -r -ps >> keys/hub.key
+            # Decrypt Server Key
             openssl enc -nosalt -aes-256-cbc -d -in assets/server.key.enc -out assets/server.key -base64 -K $DECRYPTION_KEY -iv $DECRYPTION_IV
-            #- openssl rsa -in keys/hub.key -check -noout
-            
-            ### Uncomment the following if performing deployments
-            #- echo 'make deploy key'
-            #- echo $DEPLOY_SERVER_KEY_HEX | xxd -r -ps >> keys/deploy.key
-            #- openssl rsa -in keys/deploy.key -check -noout
-            #- sfdx force:auth:jwt:grant --clientid $DEPLOY_CONSUMER_KEY --jwtkeyfile keys/deploy.key --username $DEPLOY_SFDC_USER -a deploy
+
+            # Force Auth Grant on DevHub
+            sfdx force:auth:jwt:grant --clientid $HUB_CONSUMER_KEY --jwtkeyfile assets/server.key --username $HUB_SFDX_USER --setdefaultdevhubusername -a $DEVHUB_ALIAS
 
       - run:
           name: Create ScratchOrg and Push code
           command: |
-            echo 'Running tests'
-            sfdx force:auth:jwt:grant --clientid $HUB_CONSUMER_KEY --jwtkeyfile assets/server.key --username $HUB_SFDX_USER --setdefaultdevhubusername -a hub
-            sfdx force:org:create -s -f config/project-scratch-def.json -a circle_build_$CIRCLE_BUILD_NUM --wait 3
-            ls -la
-            sfdx force:source:status
-            sfdx force:source:push -u circle_build_$CIRCLE_BUILD_NUM
-
-      #- run:
-          #name: Run Apex Tests
-          #command: |
-            #mkdir -p ~/junit
-            #sfdx force:apex:test:run -c -d ~/junit -r junit --wait 5
-
-      #- store_test_results:
-          #path: ~/junit
+            sfdx force:org:create -v $DEVHUB_ALIAS -s -f config/project-scratch-def.json -a $CI_ORG_ALIAS --wait 3
+            sfdx force:org:display -u $CI_ORG_ALIAS
+            sfdx force:source:push -u $CI_ORG_ALIAS
+            sfdx force:org:delete -u $CI_ORG_ALIAS -p
+      
+      - run:
+          name: Run Apex Tests
+          command: |
+            echo 'Run Apex Tests'
+            #sfdx force:apex:test:run -u $CI_ORG_ALIAS --wait 10
 
       - run:
           name: Delete Useless Scratch Org
           command: |
-            sfdx force:org:delete -u circle_build_$CIRCLE_BUILD_NUM -p
+            sfdx force:org:delete -u $CI_ORG_ALIAS -p
