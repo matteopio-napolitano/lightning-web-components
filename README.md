@@ -20,7 +20,7 @@ This process produces two files.
 
 `server.crt` — The digital certification. You upload this file when you create the connected app required by the JWT-based flow.
 
-1. Generate a private key, and store it in a file called server.key. At the end, you can delete the server.pass.key file because you no longer need it.
+1. Generate a private key, and store it in a file called server.key. At the end, you can delete the `server.pass.key` file because you no longer need it.
 
 ```
 openssl genrsa -des3 -passout pass:x -out server.pass.key 2048
@@ -66,3 +66,27 @@ If you use JWT-based authorization, you must create your own connected app in yo
 13. (JWT only) In the OAuth Policies section, select **Admin approved users are pre-authorized for Permitted Users**, and click **OK**.
 14. (JWT only) Click **Save**.
 15. (JWT only) Click **Manage Profiles** and then click **Manage Permission Sets**. Select the profiles and permission sets that are pre-authorized to use this connected app. Create permission sets if necessary.
+
+## Encrypt and use the `server.key` in CI Build Environment
+Encrypt the `server.key` generated above using the instructions below.
+
+1. Generate a `key` and `initializtion vector (iv)` to encrypt your `server.key` file locally. The `key` and `iv` will be used by CI Tool to decrypt your server key in the build environment.
+
+    ```
+    openssl enc -aes-256-cbc -k <passphrase here> -P -md sha1 -nosalt
+    ```
+
+    Make note of the `key` and `iv` values output to the screen.
+
+2. Encrypt the `server.key` using the newly generated `key` and `iv` values.
+
+    ```
+    openssl enc -nosalt -aes-256-cbc -in server.key -out server.key.enc -base64 -K <key from above> -iv <iv from above>
+    ```
+
+3. Store the `key` and `iv` contents as protected environment variables in the CI Tool. These values are considered secret so please treat them as such. For example you can store the `key` as `$DECRYPTION_KEY` and the `iv` as `$DECRYPTION_IV`.
+
+4. Add the `server.key.enc` file into your project. Starting from now you can keep it under VCS and use it in the build environment in order to decrypt the `server.key`. Let's suppose you're adding it to `assets/server.key.enc`, to decrypt the `server.key` you can run:
+    ```
+    openssl enc -nosalt -aes-256-cbc -d -in assets/server.key.enc -out assets/server.key -base64 -K $DECRYPTION_KEY -iv $DECRYPTION_IV
+    ```
