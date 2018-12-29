@@ -47,3 +47,50 @@ jobs:
           name: Delete Useless Scratch Org
           command: |
             sfdx force:org:delete -u $CI_ORG_ALIAS -p
+
+  deployment:
+    environment:
+      DX_CLI_URL: https://developer.salesforce.com/media/salesforce-cli/sfdx-linux-amd64.tar.xz
+      DEVHUB_ALIAS: huborg
+
+    docker:
+      - image: circleci/node
+    
+    steps:
+      - checkout
+
+      - run:
+          name: Prepare SFDX CLI
+          command: |
+            # Install CLI
+            mkdir sfdx
+            wget -qO- $DX_CLI_URL | tar xJ -C sfdx --strip-components 1
+            ./sfdx/install
+            sfdx
+
+            # Update to pre-release
+            sfdx plugins:install salesforcedx@pre-release
+
+            # Decrypt Server Key
+            openssl enc -nosalt -aes-256-cbc -d -in assets/server.key.enc -out assets/server.key -base64 -K $DECRYPTION_KEY -iv $DECRYPTION_IV
+
+            # Force Auth Grant on DevHub
+            sfdx force:auth:jwt:grant --clientid $HUB_CONSUMER_KEY --jwtkeyfile assets/server.key --username $HUB_SFDX_USER --setdefaultdevhubusername -a $DEVHUB_ALIAS
+      
+      - run:
+          name: Deploy to DevHub Org
+          command: |
+            sfdx force:source:deploy -p force-app -u $HUB_SFDX_USER
+
+workflows:
+  version: 2
+  Example_Workflow:
+    jobs:
+     - build
+     - deployment:
+        requires:
+          - build
+        filters:
+          branches:
+            only: master
+          
