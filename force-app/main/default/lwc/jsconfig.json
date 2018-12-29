@@ -5,6 +5,9 @@
         "paths": {
             "c/hello-world": [
                 "helloWorld/helloWorld.js"
+            ],
+            "c/address-map": [
+                "addressMap/addressMap.js"
             ]
         }
     },
